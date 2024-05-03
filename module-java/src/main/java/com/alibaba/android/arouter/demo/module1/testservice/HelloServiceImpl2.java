@@ -14,8 +14,8 @@ import com.alibaba.android.arouter.facade.annotation.Route;
  * @version 1.0
  * @since 2017/1/3 10:26
  */
-@Route(path = "/yourservicegroupname/hello",group = "iii")
-public class HelloServiceImpl implements HelloService {
+@Route(path = "/yourservicegroupname/hello2",group = "iii")
+public class HelloServiceImpl2 implements HelloService {
     Context mContext;
 
     @Override

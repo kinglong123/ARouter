@@ -4,6 +4,7 @@ import com.alibaba.android.arouter.facade.annotation.Autowired;
 import com.alibaba.android.arouter.facade.annotation.Route;
 import com.alibaba.android.arouter.facade.enums.RouteType;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.lang.model.element.Element;
@@ -19,6 +20,7 @@ public class RouteMeta {
     private RouteType type;         // Type of route
     private Element rawType;        // Raw type of route
     private Class<?> destination;   // Destination
+    private List<Class<?>> destinationS;   // Destination
     private String path;            // Path of route
     private String group;           // Group of route
     private int priority = -1;      // The smaller the number, the higher the priority

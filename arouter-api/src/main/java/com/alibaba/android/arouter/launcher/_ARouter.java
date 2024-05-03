@@ -1,5 +1,6 @@
 package com.alibaba.android.arouter.launcher;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Fragment;
@@ -31,7 +32,9 @@ import com.alibaba.android.arouter.utils.TextUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -190,6 +193,17 @@ final class _ARouter {
     }
 
     /**
+     * Build postcard by path and default group
+     */
+    protected Postcard buildGrop(String grop) {
+        if (TextUtils.isEmpty(grop)) {
+            throw new HandlerException(Consts.TAG + "Parameter is invalid!");
+        } else {
+            return build(grop, grop, true);
+        }
+    }
+
+    /**
      * Build postcard by uri
      */
     protected Postcard build(Uri uri) {
@@ -247,6 +261,32 @@ final class _ARouter {
         interceptorService = (InterceptorService) ARouter.getInstance().build("/arouter/service/interceptor").navigation();
     }
 
+    protected <T> List<T> getNavigation(Class<? extends T> service) {
+        try {
+            Postcard postcard = LogisticsCenter.buildProvider(service.getName());
+
+            // Compatible 1.0.5 compiler sdk.
+            // Earlier versions did not use the fully qualified name to get the service
+            if (null == postcard) {
+                // No service, or this service in old version.
+                postcard = LogisticsCenter.buildProvider(service.getSimpleName());
+            }
+
+            if (null == postcard) {
+                return null;
+            }
+
+            // Set application to postcard.
+            postcard.setContext(mContext);
+            postcard.setGetGroup(true);
+            LogisticsCenter.completion(postcard);
+            return (List<T>) postcard.getProviders();
+        } catch (NoRouteFoundException ex) {
+            logger.warning(Consts.TAG, ex.getMessage());
+            return null;
+        }
+    }
+
     protected <T> T navigation(Class<? extends T> service) {
         try {
             Postcard postcard = LogisticsCenter.buildProvider(service.getName());
@@ -271,6 +311,53 @@ final class _ARouter {
             logger.warning(Consts.TAG, ex.getMessage());
             return null;
         }
+    }
+    protected  <T> List<T>  getNavigation(final Context context, final Postcard postcard, final int requestCode, final NavigationCallback callback) {
+        PretreatmentService pretreatmentService = ARouter.getInstance().navigation(PretreatmentService.class);
+        if (null != pretreatmentService && !pretreatmentService.onPretreatment(context, postcard)) {
+            // Pretreatment failed, navigation canceled.
+            return null;
+        }
+
+        // Set context to postcard.
+        postcard.setContext(null == context ? mContext : context);
+
+        try {
+            LogisticsCenter.completion(postcard);
+        } catch (NoRouteFoundException ex) {
+            logger.warning(Consts.TAG, ex.getMessage());
+
+            if (debuggable()) {
+                // Show friendly tips for user.
+                runInMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mContext, "There's no route matched!\n" +
+                                " Path = [" + postcard.getPath() + "]\n" +
+                                " Group = [" + postcard.getGroup() + "]", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+
+            if (null != callback) {
+                callback.onLost(postcard);
+            } else {
+                // No callback for this invoke, then we use the global degrade service.
+                DegradeService degradeService = ARouter.getInstance().navigation(DegradeService.class);
+                if (null != degradeService) {
+                    degradeService.onLost(context, postcard);
+                }
+            }
+
+            return null;
+        }
+
+        if (null != callback) {
+            callback.onFound(postcard);
+        }
+
+        return _getNavigation(postcard, requestCode, callback);
+
     }
 
     /**
@@ -358,6 +445,50 @@ final class _ARouter {
         return null;
     }
 
+
+
+    private  <T> List<T>  _getNavigation(final Postcard postcard, final int requestCode, final NavigationCallback callback) {
+//        final Context currentContext = postcard.getContext();
+
+        switch (postcard.getType()) {
+
+            case PROVIDER:
+                return (List<T>) postcard.getProviders();
+            case BOARDCAST:
+            case CONTENT_PROVIDER:
+            case FRAGMENT:
+                List<Class<?>> classes = postcard.getDestinations();
+                List<T> results = new ArrayList<T>();
+                for(Class<?> c:classes){
+                    Class<?> fragmentMeta = c;
+                    try {
+                        Object instance = fragmentMeta.getConstructor().newInstance();
+                        if (instance instanceof Fragment) {
+                            ((Fragment) instance).setArguments(postcard.getExtras());
+                            results.add((T) instance);
+                        } else if (instance instanceof android.support.v4.app.Fragment) {
+                            ((android.support.v4.app.Fragment) instance).setArguments(postcard.getExtras());
+                            results.add((T) instance);
+                        }
+//                        if(instance instanceof )){
+//                            results.add((T) instance);
+//                        }
+                    } catch (Exception ex) {
+                        logger.error(Consts.TAG, "Fetch fragment instance error, " + TextUtils.formatStackTrace(ex.getStackTrace()));
+                    }
+                }
+                return results;
+
+
+            case METHOD:
+            case SERVICE:
+            default:
+                return null;
+        }
+
+    }
+
+    @SuppressLint("WrongConstant")
     private Object _navigation(final Postcard postcard, final int requestCode, final NavigationCallback callback) {
         final Context currentContext = postcard.getContext();
 

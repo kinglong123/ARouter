@@ -20,8 +20,8 @@ import java.util.Map;
 /**
  * A simple {@link Fragment} subclass.
  */
-@Route(path = "/test/fragment",group = "fragment")
-public class BlankFragment extends Fragment {
+@Route(path = "/test/fragment2",group = "fragment")
+public class BlankFragment2 extends Fragment {
 
     @Autowired
     String name;
@@ -59,7 +59,7 @@ public class BlankFragment extends Fragment {
     @Autowired
     Map<String, List<TestObj>> map;
 
-    public BlankFragment() {
+    public BlankFragment2() {
         // Required empty public constructor
     }
 

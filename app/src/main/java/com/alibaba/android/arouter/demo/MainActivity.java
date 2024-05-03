@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.alibaba.android.arouter.demo.module1.testactivity.TestDynamicActivity;
+import com.alibaba.android.arouter.demo.module1.testservice.HelloServiceImpl;
+import com.alibaba.android.arouter.demo.module1.testservice.HelloServiceImpl2;
 import com.alibaba.android.arouter.demo.service.model.TestObj;
 import com.alibaba.android.arouter.demo.service.model.TestParcelable;
 import com.alibaba.android.arouter.demo.service.model.TestSerializable;
@@ -21,6 +23,7 @@ import com.alibaba.android.arouter.facade.Postcard;
 import com.alibaba.android.arouter.facade.callback.NavCallback;
 import com.alibaba.android.arouter.facade.enums.RouteType;
 import com.alibaba.android.arouter.facade.model.RouteMeta;
+import com.alibaba.android.arouter.facade.template.IProvider;
 import com.alibaba.android.arouter.facade.template.IRouteGroup;
 import com.alibaba.android.arouter.launcher.ARouter;
 
@@ -34,7 +37,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+
     }
+
+    <T> List<T> sss() {
+        return (List<T>) getss();
+    }
+
+    List<IProvider> getss() {
+        List<IProvider> aa = new ArrayList<>();
+        aa.add(new HelloServiceImpl());
+        aa.add(new HelloServiceImpl2());
+        return aa;
+    }
+
 
     /**
      * Called when a view has been clicked.
@@ -205,18 +223,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         .navigation(this, 666);
                 break;
             case R.id.getFragment:
-                Fragment fragment = (Fragment) ARouter.getInstance().build("/test/fragment")
-                        .withString("name", "老王")
-                        .withInt("age", 18)
-                        .withBoolean("boy", true)
-                        .withLong("high", 180)
-                        .withString("url", "https://a.b.c")
-                        .withSerializable("ser", testSerializable)
-                        .withParcelable("pac", testParcelable)
-                        .withObject("obj", testObj)
-                        .withObject("objList", objList)
-                        .withObject("map", map).navigation();
-                Toast.makeText(this, "找到Fragment:" + fragment.toString(), Toast.LENGTH_SHORT).show();
+//                Fragment fragment = (Fragment) ARouter.getInstance().build("/test/fragment")
+//                        .withString("name", "老王")
+//                        .withInt("age", 18)
+//                        .withBoolean("boy", true)
+//                        .withLong("high", 180)
+//                        .withString("url", "https://a.b.c")
+//                        .withSerializable("ser", testSerializable)
+//                        .withParcelable("pac", testParcelable)
+//                        .withObject("obj", testObj)
+//                        .withObject("objList", objList)
+//                        .withObject("map", map).navigation();
+
+//            List<Fragment> f = ARouter.getInstance().buildGroup("fragment")
+//                        .setGetGroup(true)
+//                        .withString("name", "老王")
+//                        .withInt("age", 18)
+//                        .withBoolean("boy", true)
+//                        .withLong("high", 180)
+//                        .withString("url", "https://a.b.c")
+//                        .withSerializable("ser", testSerializable)
+//                        .withParcelable("pac", testParcelable)
+//                        .withObject("obj", testObj)
+//                        .withObject("objList", objList)
+//                        .withObject("map", map).getNavigation();
+//
+//
+////                (List<T>) postcard.getProviders();
+//                System.out.println("ffff:"+f.size());
+//                List<HelloService> ss = sss();
+//                System.out.println("sss:"+ss.size());
+//
+//                List<HelloService> sf = ARouter.getInstance().buildGroup("iii").setGetGroup(true).getNavigation();
+//                ARouter.getInstance().navigation(HelloService.class).sayHello("mike");
+
+                List<HelloService> sf2 =ARouter.getInstance().getNavigation(HelloService.class);
+                System.out.println("sss:"+sf2.size());
+
+                Toast.makeText(this, "找到Fragment:" + "fragment".toString(), Toast.LENGTH_SHORT).show();
                 break;
             case R.id.addGroup:
                 ARouter.getInstance().addRouteGroup(new IRouteGroup() {

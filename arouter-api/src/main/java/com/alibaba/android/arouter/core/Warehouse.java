@@ -23,8 +23,13 @@ class Warehouse {
     static Map<String, Class<? extends IRouteGroup>> groupsIndex = new HashMap<>();
     static Map<String, RouteMeta> routes = new HashMap<>();
 
+    static Map<String, List<RouteMeta>> routesGroup = new HashMap<>();
+
     // Cache provider
     static Map<Class, IProvider> providers = new HashMap<>();
+
+    static Map<Class, List<IProvider>> providersGroup = new HashMap<>();
+
     static Map<String, RouteMeta> providersIndex = new HashMap<>();
 
     // Cache interceptor

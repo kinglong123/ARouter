@@ -21,7 +21,11 @@ import com.alibaba.android.arouter.utils.PackageUtils;
 import com.alibaba.android.arouter.utils.TextUtils;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -88,13 +92,14 @@ public class LogisticsCenter {
                             + " should implements one of IRouteRoot/IProviderGroup/IInterceptorGroup.");
                 }
             } catch (Exception e) {
-                logger.error(TAG,"register class error:" + className, e);
+                logger.error(TAG, "register class error:" + className, e);
             }
         }
     }
 
     /**
      * method for arouter-auto-register plugin to register Routers
+     *
      * @param routeRoot IRouteRoot implementation class in the package: com.alibaba.android.arouter.core.routers
      */
     private static void registerRouteRoot(IRouteRoot routeRoot) {
@@ -106,6 +111,7 @@ public class LogisticsCenter {
 
     /**
      * method for arouter-auto-register plugin to register Interceptors
+     *
      * @param interceptorGroup IInterceptorGroup implementation class in the package: com.alibaba.android.arouter.core.routers
      */
     private static void registerInterceptor(IInterceptorGroup interceptorGroup) {
@@ -117,6 +123,7 @@ public class LogisticsCenter {
 
     /**
      * method for arouter-auto-register plugin to register Providers
+     *
      * @param providerGroup IProviderGroup implementation class in the package: com.alibaba.android.arouter.core.routers
      */
     private static void registerProvider(IProviderGroup providerGroup) {
@@ -213,6 +220,132 @@ public class LogisticsCenter {
         }
     }
 
+    public synchronized static void completion2(Postcard postcard) {
+        if (null == postcard) {
+            throw new NoRouteFoundException(TAG + "No postcard!");
+        }
+        List<RouteMeta> routeMetas = Warehouse.routesGroup.get(postcard.getGroup());
+        if (routeMetas == null) {
+            Map<String, RouteMeta> RouteMetaMap = Warehouse.routes;
+            Iterator<String> iterator = RouteMetaMap.keySet().iterator();
+//            routeMetas =new HashMap<String, List<RouteMeta>>();
+            List<RouteMeta> list = new ArrayList<RouteMeta>();
+            while (iterator.hasNext()) {
+                String key = iterator.next();
+                RouteMeta routeMeta = RouteMetaMap.get(key);
+                if (routeMeta != null && routeMeta.getGroup() != null
+                        && routeMeta.getGroup().equals(postcard.getGroup())) {
+                    list.add(routeMeta);
+                }
+            }
+            if (list.size() == 0) {
+                // Maybe its does't exist, or didn't load.
+                if (!Warehouse.groupsIndex.containsKey(postcard.getGroup())) {
+                    throw new NoRouteFoundException(TAG + "There is no route match the path [" + postcard.getPath() + "], in group [" + postcard.getGroup() + "]");
+                } else {
+                    // Load route and cache it into memory, then delete from metas.
+                    try {
+                        if (ARouter.debuggable()) {
+                            logger.debug(TAG, String.format(Locale.getDefault(), "The group [%s] starts loading, trigger by [%s]", postcard.getGroup(), postcard.getPath()));
+                        }
+
+                        addRouteGroupDynamic(postcard.getGroup(), null);
+
+                        if (ARouter.debuggable()) {
+                            logger.debug(TAG, String.format(Locale.getDefault(), "The group [%s] has already been loaded, trigger by [%s]", postcard.getGroup(), postcard.getPath()));
+                        }
+                    } catch (Exception e) {
+                        throw new HandlerException(TAG + "Fatal exception when loading group meta. [" + e.getMessage() + "]");
+                    }
+
+                     RouteMetaMap = Warehouse.routes;
+                     iterator = RouteMetaMap.keySet().iterator();
+                    while (iterator.hasNext()) {
+                        String key = iterator.next();
+                        RouteMeta routeMeta = RouteMetaMap.get(key);
+                        if (routeMeta != null && routeMeta.getGroup() != null
+                                && routeMeta.getGroup().equals(postcard.getGroup())) {
+                            list.add(routeMeta);
+                        }
+                    }
+                    Warehouse.routesGroup.put(postcard.getGroup(), list);
+                }
+            } else {
+                Warehouse.routesGroup.put(postcard.getGroup(), list);
+
+            }
+        }
+
+      routeMetas = Warehouse.routesGroup.get(postcard.getGroup());
+        if(routeMetas!=null &&routeMetas.size() ==0){
+            System.out.println("11111111111111111111");
+            return;
+        }
+
+        RouteMeta routeMeta = routeMetas.get(0);
+        for (RouteMeta routeMeta1 : routeMetas) {
+            postcard.addDestination(routeMeta1.getDestination());
+        }
+        postcard.setDestination(routeMeta.getDestination());
+        postcard.setType(routeMeta.getType());
+        postcard.setPriority(routeMeta.getPriority());
+        postcard.setExtra(routeMeta.getExtra());
+
+        Uri rawUri = postcard.getUri();
+        if (null != rawUri) {   // Try to set params into bundle.
+            Map<String, String> resultMap = TextUtils.splitQueryParameters(rawUri);
+            Map<String, Integer> paramsType = routeMeta.getParamsType();
+
+            if (MapUtils.isNotEmpty(paramsType)) {
+                // Set value by its type, just for params which annotation by @Param
+                for (Map.Entry<String, Integer> params : paramsType.entrySet()) {
+                    setValue(postcard,
+                            params.getValue(),
+                            params.getKey(),
+                            resultMap.get(params.getKey()));
+                }
+
+                // Save params name which need auto inject.
+                postcard.getExtras().putStringArray(ARouter.AUTO_INJECT, paramsType.keySet().toArray(new String[]{}));
+            }
+
+            // Save raw uri
+            postcard.withString(ARouter.RAW_URI, rawUri.toString());
+        }
+
+        switch (routeMeta.getType()) {
+            case PROVIDER:  // if the route is provider, should find its instance
+                // Its provider, so it must implement IProvider
+
+                Class<? extends IProvider> providerMeta = (Class<? extends IProvider>) routeMeta.getDestination();
+                List<IProvider> instance = Warehouse.providersGroup.get(providerMeta);
+                if (null == instance) { // There's no instance of this provider
+                    for (RouteMeta routeMeta1 : routeMetas) {
+                        Class<? extends IProvider> providerMeta1 = (Class<? extends IProvider>) routeMeta1.getDestination();
+                        IProvider provider;
+                        try {
+                            provider = providerMeta1.getConstructor().newInstance();
+                            provider.init(mContext);
+                            Warehouse.providers.put(providerMeta1, provider);
+                            postcard.addProvider(provider);
+
+                        } catch (Exception e) {
+                            logger.error(TAG, "Init provider failed!", e);
+                            throw new HandlerException("Init provider failed!");
+                        }
+                    }
+                }
+                postcard.greenChannel();    // Provider should skip all of interceptors
+                break;
+            case FRAGMENT:
+                postcard.greenChannel();    // Fragment needn't interceptors
+            default:
+                break;
+        }
+
+    }
+
+
     /**
      * Completion the postcard by route metas
      *
@@ -221,6 +354,10 @@ public class LogisticsCenter {
     public synchronized static void completion(Postcard postcard) {
         if (null == postcard) {
             throw new NoRouteFoundException(TAG + "No postcard!");
+        }
+        if (postcard.isGetGroup()) {
+            completion2(postcard);
+            return;
         }
 
         RouteMeta routeMeta = Warehouse.routes.get(postcard.getPath());
@@ -355,12 +492,27 @@ public class LogisticsCenter {
         Warehouse.clear();
     }
 
-    public synchronized static void addRouteGroupDynamic(String groupName, IRouteGroup group) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        if (Warehouse.groupsIndex.containsKey(groupName)){
+    public synchronized static void addRouteGroupDynamic2(String groupName, IRouteGroup group) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        if (Warehouse.groupsIndex.containsKey(groupName)) {
             // If this group is included, but it has not been loaded
             // load this group first, because dynamic route has high priority.
             Warehouse.groupsIndex.get(groupName).getConstructor().newInstance().loadInto(Warehouse.routes);
             Warehouse.groupsIndex.remove(groupName);
+        }
+
+        // cover old group.
+        if (null != group) {
+            group.loadInto(Warehouse.routes);
+        }
+    }
+
+    public synchronized static void addRouteGroupDynamic(String groupName, IRouteGroup group) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        if (Warehouse.groupsIndex.containsKey(groupName)) {
+            // If this group is included, but it has not been loaded
+            // load this group first, because dynamic route has high priority.
+            Warehouse.groupsIndex.get(groupName).getConstructor().newInstance().loadInto(Warehouse.routes);
+            Warehouse.groupsIndex.remove(groupName);
+
         }
 
         // cover old group.

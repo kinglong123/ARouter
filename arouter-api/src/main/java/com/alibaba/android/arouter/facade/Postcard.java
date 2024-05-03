@@ -10,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.util.SparseArray;
+import android.view.View;
 
 import com.alibaba.android.arouter.facade.callback.NavigationCallback;
 import com.alibaba.android.arouter.facade.model.RouteMeta;
@@ -19,6 +20,7 @@ import com.alibaba.android.arouter.launcher.ARouter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A container that contains the roadmap.
@@ -30,11 +32,15 @@ import java.util.ArrayList;
 public final class Postcard extends RouteMeta {
     // Base
     private Uri uri;
+    private boolean isGetGroup;
     private Object tag;             // A tag prepare for some thing wrong. inner params, DO NOT USE!
     private Bundle mBundle;         // Data to transform
     private int flags = 0;         // Flags of route
     private int timeout = 300;      // Navigation timeout, TimeUnit.Second
     private IProvider provider;     // It will be set value, if this postcard was provider.
+    private List<IProvider> providers;     // It will be set value, if this postcard was provider.
+    private List<Class<?>> destinations;   // Destination
+
     private boolean greenChannel;
     private SerializationService serializationService;
     private Context context;        // May application or activity, check instance type before use it.
@@ -61,9 +67,41 @@ public final class Postcard extends RouteMeta {
         return provider;
     }
 
+    public boolean isGetGroup() {
+        return isGetGroup;
+    }
+
+    public Postcard setGetGroup(boolean getGroup) {
+        isGetGroup = getGroup;
+        return this;
+    }
+
     public Postcard setProvider(IProvider provider) {
         this.provider = provider;
         return this;
+    }
+
+    public List<IProvider> getProviders() {
+        return providers;
+    }
+
+    public Postcard addProvider(IProvider provider) {
+        if(providers == null){
+            providers = new ArrayList<IProvider>();
+        }
+        providers.add(provider);
+        return this;
+    }
+
+    public List<Class<?>> getDestinations() {
+        return destinations;
+    }
+
+    public void addDestination(Class<?> destination) {
+        if(destinations ==null){
+            destinations = new ArrayList<Class<?>>();
+        }
+        this.destinations.add(destination);
     }
 
     public Postcard() {
@@ -130,6 +168,10 @@ public final class Postcard extends RouteMeta {
         return navigation(null);
     }
 
+    public <T> List<T> getNavigation() {
+        return getNavigation(null);
+    }
+
     /**
      * Navigation to the route with path in postcard.
      *
@@ -137,6 +179,9 @@ public final class Postcard extends RouteMeta {
      */
     public Object navigation(Context context) {
         return navigation(context, null);
+    }
+    public <T> List<T> getNavigation(Context context) {
+        return getNavigation(context, null);
     }
 
     /**
@@ -146,6 +191,9 @@ public final class Postcard extends RouteMeta {
      */
     public Object navigation(Context context, NavigationCallback callback) {
         return ARouter.getInstance().navigation(context, this, -1, callback);
+    }
+    public <T> List<T> getNavigation(Context context, NavigationCallback callback) {
+        return ARouter.getInstance().getNavigation(context, this, -1, callback);
     }
 
     /**

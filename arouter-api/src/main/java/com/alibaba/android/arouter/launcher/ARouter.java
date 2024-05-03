@@ -12,6 +12,7 @@ import com.alibaba.android.arouter.facade.template.ILogger;
 import com.alibaba.android.arouter.facade.template.IRouteGroup;
 import com.alibaba.android.arouter.utils.Consts;
 
+import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -143,6 +144,10 @@ public final class ARouter {
         return _ARouter.getInstance().build(path);
     }
 
+    public Postcard buildGroup(String group) {
+        return _ARouter.getInstance().buildGrop(group);
+    }
+
     /**
      * Build the roadmap, draw a postcard.
      *
@@ -174,6 +179,11 @@ public final class ARouter {
         return _ARouter.getInstance().navigation(service);
     }
 
+    public <T> List<T> getNavigation(Class<? extends T> service) {
+        return _ARouter.getInstance().getNavigation(service);
+    }
+
+
     /**
      * Launch the navigation.
      *
@@ -185,6 +195,10 @@ public final class ARouter {
     public Object navigation(Context mContext, Postcard postcard, int requestCode, NavigationCallback callback) {
         return _ARouter.getInstance().navigation(mContext, postcard, requestCode, callback);
     }
+    public  <T> List<T>  getNavigation(Context mContext, Postcard postcard, int requestCode, NavigationCallback callback) {
+        return _ARouter.getInstance().getNavigation(mContext, postcard, requestCode, callback);
+    }
+
 
     /**
      * Add route group dynamic.
