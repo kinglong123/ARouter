@@ -195,8 +195,8 @@ public final class ARouter {
     public Object navigation(Context mContext, Postcard postcard, int requestCode, NavigationCallback callback) {
         return _ARouter.getInstance().navigation(mContext, postcard, requestCode, callback);
     }
-    public  <T> List<T>  getNavigation(Context mContext, Postcard postcard, int requestCode, NavigationCallback callback) {
-        return _ARouter.getInstance().getNavigation(mContext, postcard, requestCode, callback);
+    public  <T> List<T>  getNavigation(Context mContext, Postcard postcard, int requestCode, Class<? extends T> clas,  NavigationCallback callback) {
+        return _ARouter.getInstance().getNavigation(mContext, postcard, requestCode, clas,callback);
     }
 
 

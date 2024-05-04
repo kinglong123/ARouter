@@ -168,8 +168,8 @@ public final class Postcard extends RouteMeta {
         return navigation(null);
     }
 
-    public <T> List<T> getNavigation() {
-        return getNavigation(null);
+    public <T> List<T> getNavigation(Class<? extends T> clas) {
+        return getNavigation(null,clas);
     }
 
     /**
@@ -180,8 +180,8 @@ public final class Postcard extends RouteMeta {
     public Object navigation(Context context) {
         return navigation(context, null);
     }
-    public <T> List<T> getNavigation(Context context) {
-        return getNavigation(context, null);
+    public <T> List<T> getNavigation(Context context,Class<? extends T> clas) {
+        return getNavigation(context, clas, null);
     }
 
     /**
@@ -192,8 +192,8 @@ public final class Postcard extends RouteMeta {
     public Object navigation(Context context, NavigationCallback callback) {
         return ARouter.getInstance().navigation(context, this, -1, callback);
     }
-    public <T> List<T> getNavigation(Context context, NavigationCallback callback) {
-        return ARouter.getInstance().getNavigation(context, this, -1, callback);
+    public <T> List<T> getNavigation(Context context, Class<? extends T> clas, NavigationCallback callback) {
+        return ARouter.getInstance().getNavigation(context, this, -1, clas,callback);
     }
 
     /**

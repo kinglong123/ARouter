@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        List<HelloService> s = (List) getss();
 
     }
 
@@ -235,26 +235,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                        .withObject("objList", objList)
 //                        .withObject("map", map).navigation();
 
-//            List<Fragment> f = ARouter.getInstance().buildGroup("fragment")
-//                        .setGetGroup(true)
-//                        .withString("name", "老王")
-//                        .withInt("age", 18)
-//                        .withBoolean("boy", true)
-//                        .withLong("high", 180)
-//                        .withString("url", "https://a.b.c")
-//                        .withSerializable("ser", testSerializable)
-//                        .withParcelable("pac", testParcelable)
-//                        .withObject("obj", testObj)
-//                        .withObject("objList", objList)
-//                        .withObject("map", map).getNavigation();
+            List<Fragment> f = ARouter.getInstance().buildGroup("fragment")
+                        .setGetGroup(true)
+                        .withString("name", "老王")
+                        .withInt("age", 18)
+                        .withBoolean("boy", true)
+                        .withLong("high", 180)
+                        .withString("url", "https://a.b.c")
+                        .withSerializable("ser", testSerializable)
+                        .withParcelable("pac", testParcelable)
+                        .withObject("obj", testObj)
+                        .withObject("objList", objList)
+                        .withObject("map", map).getNavigation(Fragment.class);
 //
 //
 ////                (List<T>) postcard.getProviders();
-//                System.out.println("ffff:"+f.size());
+                System.out.println("ffff:"+f.size());
 //                List<HelloService> ss = sss();
 //                System.out.println("sss:"+ss.size());
 //
-//                List<HelloService> sf = ARouter.getInstance().buildGroup("iii").setGetGroup(true).getNavigation();
+                List<HelloService> sf = ARouter.getInstance().buildGroup("iii").setGetGroup(true).getNavigation(HelloService.class);
 //                ARouter.getInstance().navigation(HelloService.class).sayHello("mike");
 
                 List<HelloService> sf2 =ARouter.getInstance().getNavigation(HelloService.class);

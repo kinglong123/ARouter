@@ -24,6 +24,7 @@ import com.alibaba.android.arouter.facade.callback.NavigationCallback;
 import com.alibaba.android.arouter.facade.model.RouteMeta;
 import com.alibaba.android.arouter.facade.service.*;
 import com.alibaba.android.arouter.facade.template.ILogger;
+import com.alibaba.android.arouter.facade.template.IProvider;
 import com.alibaba.android.arouter.facade.template.IRouteGroup;
 import com.alibaba.android.arouter.thread.DefaultPoolExecutor;
 import com.alibaba.android.arouter.utils.Consts;
@@ -312,7 +313,7 @@ final class _ARouter {
             return null;
         }
     }
-    protected  <T> List<T>  getNavigation(final Context context, final Postcard postcard, final int requestCode, final NavigationCallback callback) {
+    protected  <T> List<T>  getNavigation(final Context context, final Postcard postcard, final int requestCode,Class<? extends T> clas,  final NavigationCallback callback) {
         PretreatmentService pretreatmentService = ARouter.getInstance().navigation(PretreatmentService.class);
         if (null != pretreatmentService && !pretreatmentService.onPretreatment(context, postcard)) {
             // Pretreatment failed, navigation canceled.
@@ -356,7 +357,7 @@ final class _ARouter {
             callback.onFound(postcard);
         }
 
-        return _getNavigation(postcard, requestCode, callback);
+        return _getNavigation(postcard, requestCode,clas, callback);
 
     }
 
@@ -447,13 +448,24 @@ final class _ARouter {
 
 
 
-    private  <T> List<T>  _getNavigation(final Postcard postcard, final int requestCode, final NavigationCallback callback) {
+    private  <T> List<T>  _getNavigation(final Postcard postcard, final int requestCode,Class<? extends T> clas, final NavigationCallback callback) {
 //        final Context currentContext = postcard.getContext();
 
         switch (postcard.getType()) {
 
             case PROVIDER:
-                return (List<T>) postcard.getProviders();
+                List<IProvider> s=   postcard.getProviders();
+                List<T> list = new ArrayList<>();
+                if(s !=null&& s.size()>0){
+                    for(IProvider iProvider:s){
+                        if(clas.isInstance(iProvider)){
+                            list.add((T) iProvider);
+                        }
+                    }
+                }
+                return list;
+
+//                return (List<T>) postcard.getProviders();
             case BOARDCAST:
             case CONTENT_PROVIDER:
             case FRAGMENT:
@@ -465,14 +477,14 @@ final class _ARouter {
                         Object instance = fragmentMeta.getConstructor().newInstance();
                         if (instance instanceof Fragment) {
                             ((Fragment) instance).setArguments(postcard.getExtras());
-                            results.add((T) instance);
+//                            results.add((T) instance);
                         } else if (instance instanceof android.support.v4.app.Fragment) {
                             ((android.support.v4.app.Fragment) instance).setArguments(postcard.getExtras());
+//                            results.add((T) instance);
+                        }
+                        if(clas.isInstance(instance)){
                             results.add((T) instance);
                         }
-//                        if(instance instanceof )){
-//                            results.add((T) instance);
-//                        }
                     } catch (Exception ex) {
                         logger.error(Consts.TAG, "Fetch fragment instance error, " + TextUtils.formatStackTrace(ex.getStackTrace()));
                     }
